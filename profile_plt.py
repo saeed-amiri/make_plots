@@ -28,17 +28,20 @@ class Profile:
             all_lines = f.readlines()
         time_step, num_rows, nbins = self.get_header(all_lines)
         num = int(NSTEP / STEP)
-        print(num)
-        for n_block in range(5):
+        for n_block in range(num):
             if n_block == 0:
                 i_line = self.line_zero + (n_block * num_rows)
             else:
                 i_line = f_line + 1
-            f_line = i_line + num_rows
+            f_line: int = i_line + num_rows
             block = all_lines[i_line:f_line]
-            self.get_blocks(block)
+            if n_block == 0:
+                _df = self.get_blocks(block)
+            else:
+                _df += self.get_blocks(block)
+        return _df/num
 
-    def get_header(self, all_lines: list[str]) -> None:
+    def get_header(self, all_lines: list[str]) -> tuple[int, int, int]:
         line_zero = 0
         for line in all_lines[0:10]:
             if line.startswith("#"):
@@ -51,9 +54,9 @@ class Profile:
 
     def get_blocks(self, block: list[str]) -> pd.DataFrame:
         """get every block of data"""
-        columns = ['ind', 'bin_center', 'g_r', 'coord_r']
-        block = [item.strip().split(' ') for item in block]
-        df = pd.DataFrame(block, columns=columns)
+        columns: list[str] = ['ind', 'bin_center', 'g_r', 'coord_r']
+        df_block: list[list[str]] = [item.strip().split(' ') for item in block]
+        df = pd.DataFrame(df_block, columns=columns)
         df = df.astype({'ind': int,
                         'bin_center': float,
                         'g_r': float,
@@ -73,6 +76,9 @@ class Profile:
 
 STEP = 1000
 NSTEP = 2500000
-filename: str = sys.argv[1]
-f = Profile(filename)
-f.read_profile()
+files: typing.Any = sys.argv[1:]
+for filename in files:
+    f = Profile(filename)
+    df = f.read_profile()
+    plt.plot(df['bin_center'], df['g_r'])
+plt.show()
