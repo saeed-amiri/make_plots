@@ -1,7 +1,8 @@
+from cProfile import label
 import sys
 import typing
-import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pylab as plt
 
 
@@ -28,6 +29,7 @@ class Profile:
             all_lines = f.readlines()
         time_step, num_rows, nbins = self.get_header(all_lines)
         num = int(NSTEP / STEP)
+        num = 5
         for n_block in range(num):
             if n_block == 0:
                 i_line = self.line_zero + (n_block * num_rows)
@@ -74,11 +76,44 @@ class Profile:
         return time_step, num_rows, nbins
 
 
+class PlotProfile:
+    """plot all the profile on one tableau"""
+    def __init__(self,
+                 df: pd.DataFrame,
+                 filename: str,
+                 color: str) -> None:
+        self.df = df
+        self.name = filename.strip().split('.')[0]
+        self.color = color
+        del df
+
+    def plot_df(self) -> None:
+        plt.plot(self.df['bin_center'],
+                 self.df['g_r'],
+                 label=self.name,
+                 color = self.color
+                 )
+        self.axis()
+        plt.legend()
+
+    def axis(self) -> None:
+        """set axis lables, ranges, ..."""
+        plt.xlabel(r'$r/nm$', fontsize=16)
+        plt.ylabel(r'$g(r)$', fontsize=16)
+
+
 STEP = 1000
 NSTEP = 2500000
 files: typing.Any = sys.argv[1:]
-for filename in files:
+plt.figure(figsize=(16, 9), dpi=80)
+font = {'weight' : 'normal',
+        'size'   : 16}
+
+matplotlib.rc('font', **font)
+colors = ['red', 'black']
+for i, filename in enumerate(files):
     f = Profile(filename)
     df = f.read_profile()
-    plt.plot(df['bin_center'], df['g_r'])
+    plot = PlotProfile(df, filename, colors[i])
+    plot.plot_df()
 plt.show()
