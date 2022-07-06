@@ -29,7 +29,6 @@ class Profile:
             all_lines = f.readlines()
         time_step, num_rows, nbins = self.get_header(all_lines)
         num = int(NSTEP / STEP)
-        num = 5
         for n_block in range(num):
             if n_block == 0:
                 i_line = self.line_zero + (n_block * num_rows)
@@ -56,13 +55,13 @@ class Profile:
 
     def get_blocks(self, block: list[str]) -> pd.DataFrame:
         """get every block of data"""
-        columns: list[str] = ['ind', 'bin_center', 'g_r', 'coord_r']
+        columns: list[str] = ['chunk', 'coord1', 'count', 'density_mass']
         df_block: list[list[str]] = [item.strip().split(' ') for item in block]
         df = pd.DataFrame(df_block, columns=columns)
-        df = df.astype({'ind': int,
-                        'bin_center': float,
-                        'g_r': float,
-                        'coord_r': float})
+        df = df.astype({'chunk': int,
+                        'coord1': float,
+                        'density_mass': float,
+                        'count': float})
         return df
 
     def process_header(self, line: str) -> tuple[int, int, int]:
@@ -83,13 +82,13 @@ class PlotProfile:
                  filename: str,
                  color: str) -> None:
         self.df = df
-        self.name = filename.strip().split('.')[0]
+        self.name = filename
         self.color = color
         del df
 
     def plot_df(self) -> None:
-        plt.plot(self.df['bin_center'],
-                 self.df['g_r'],
+        plt.plot(self.df['coord1'],
+                 self.df['density_mass'],
                  label=self.name,
                  color = self.color
                  )
@@ -98,22 +97,29 @@ class PlotProfile:
 
     def axis(self) -> None:
         """set axis lables, ranges, ..."""
-        plt.xlabel(r'$r/nm$', fontsize=16)
-        plt.ylabel(r'$g(r)$', fontsize=16)
+        plt.xlabel(r'$r/nm$', fontsize=14)
+        plt.ylabel(r'${\rho\,/\,(kgm ^{-3})}$', fontsize=14)
 
 
 STEP = 1000
 NSTEP = 2500000
 files: typing.Any = sys.argv[1:]
-plt.figure(figsize=(16, 9), dpi=80)
+plt.figure(figsize=(16/3, 3), dpi=180)
 font = {'weight' : 'normal',
-        'size'   : 16}
+        'size'   : 14}
 
 matplotlib.rc('font', **font)
 colors = ['red', 'black']
+outname: str = ''
 for i, filename in enumerate(files):
+    name = filename.strip().split('.')[0]
     f = Profile(filename)
     df = f.read_profile()
-    plot = PlotProfile(df, filename, colors[i])
+    plot = PlotProfile(df, name, colors[i])
     plot.plot_df()
+    outname += name
+outname = f"{outname}_profile.png"
+plt.title('density profiles')
+plt.tight_layout()
+plt.savefig(outname, transparent=True)
 plt.show()
