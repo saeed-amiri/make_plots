@@ -1,10 +1,21 @@
 from cProfile import label
 import sys
+from typing import Tuple
 import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pylab as plt
 plt.style.use('science')
+
+def set_sizes(width, fraction=1) -> Tuple[float, float]:
+    """set figure dimennsion"""
+    fig_width_pt = width*fraction
+    inches_per_pt = 1/72.27
+    golden_ratio = (5**0.5 - 1)/2
+    fig_width_in = fig_width_pt * inches_per_pt
+    fig_height_in = fig_width_in * golden_ratio
+    fig_dim = (fig_width_in, fig_height_in)
+    return fig_dim
 
 class Doc:
     """"plot job_average
@@ -38,15 +49,19 @@ class PlotJob(ReadJob):
     def plot_columns(self) -> plt:
         """plot all the columns"""
         columns = list(self.df.head())
+        width = 426.79135
         if 'Step' in columns:
             columns.remove('Step')
         for col in columns:
-            plt.plot(self.df.index, self.df[col],
+            fig, ax = plt.subplots(1, figsize=set_sizes(width))
+            ax.plot(self.df.index, self.df[col],
                      label=f'Average: {np.mean(self.df[col][500:]):.4f}')
-            plt.ylabel(col)
-            plt.xlabel('Step')
+            ax.set_ylabel(col)
+            ax.set_xlabel('Step')
             plt.legend()
-            plt.show()  
+            out_name = f'{col}.png'
+            plt.savefig(out_name)
+            # plt.show()  
         return plt
 
 
