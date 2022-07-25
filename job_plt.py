@@ -7,6 +7,7 @@ import matplotlib
 import matplotlib.pylab as plt
 plt.style.use('science')
 
+
 def set_sizes(width, fraction=1) -> Tuple[float, float]:
     """set figure dimennsion"""
     fig_width_pt = width*fraction
@@ -16,6 +17,7 @@ def set_sizes(width, fraction=1) -> Tuple[float, float]:
     fig_height_in = fig_width_in * golden_ratio
     fig_dim = (fig_width_in, fig_height_in)
     return fig_dim
+
 
 class Doc:
     """"plot job_average
@@ -55,13 +57,13 @@ class PlotJob(ReadJob):
         for col in columns:
             fig, ax = plt.subplots(1, figsize=set_sizes(width))
             ax.plot(self.df.index, self.df[col],
-                     label=f'Average: {np.mean(self.df[col][500:]):.4f}')
+                    label=f'Average: {np.mean(self.df[col][500:]):.4f}')
             ax.set_ylabel(col)
             ax.set_xlabel('Step')
             plt.legend()
             out_name = f'{col}.png'
             plt.savefig(out_name)
-            # plt.show()  
+            # plt.show()
         return plt
 
 
