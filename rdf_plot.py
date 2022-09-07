@@ -1,3 +1,4 @@
+from cProfile import label
 import re
 import sys
 import typing
@@ -96,7 +97,7 @@ class PlotRdf:
                  color = self.color
                  )
         self.axis()
-        plt.legend()
+        plt.legend(fontsize=12)
 
     def axis(self) -> None:
         """set axis lables, ranges, ..."""
@@ -104,10 +105,10 @@ class PlotRdf:
         plt.ylabel(r'$g(r)$', fontsize=13)
 
 
-STEP = 1000
-NSTEP = 2500000
+STEP = 10000
+NSTEP = 1000000
 files: typing.Any = sys.argv[1:]
-plt.figure(figsize=(16/3, 3), dpi=180)
+plt.figure(figsize=(16/3, 3), dpi=300)
 font = {'weight' : 'normal',
         'size'   : 13}
 
@@ -118,11 +119,15 @@ for i, filename in enumerate(files):
     name = filename.strip().split('.')[0]
     outname += name
     name = name.split('RDF_')[1]
-    name = re.sub('_', '', name)
-    name = f"g$_{{{name}}}$"
+    numbs = re.compile(r'(\d+)')
+    letter_list = name.split('_')
+    letter_list = [item.capitalize() for item in letter_list]
+    label_i = ''.join(letter_list)
+    label_i = numbs.sub(r'_{\1}', label_i)
+    label_i = f"g$_{{{label_i}}}$"
     f = Rdf(filename)
     df = f.read_profile()
-    plot = PlotRdf(df, name, colors[i])
+    plot = PlotRdf(df, label_i, colors[i])
     plot.plot_df()
 outname = f"{outname}_rdf.png"
 plt.title('RDF')
