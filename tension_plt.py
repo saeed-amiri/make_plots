@@ -1,5 +1,6 @@
 import sys
 import matplotlib.pylab as plt
+import numpy as np
 import pandas as pd
 import matplotlib
 
@@ -12,8 +13,9 @@ def atom_to_newton(df) -> pd.DataFrame:
     atom_newton = 101325
     angestrom = 1e-10
     m_to_mili = 1e-3
-    fms_to_ns = 1e-5
-    df['v_Tension'] = -1 * df['v_Tension']*atom_newton*angestrom/m_to_mili
+    fms_to_ns = 1e-6
+    df['v_Tension'] = -1 * df['v_Tension']*atom_newton*angestrom/m_to_mili/2
+    print(np.mean(df['v_Tension']))
     df['TimeStep'] = df['TimeStep']*fms_to_ns
     return df
 
@@ -35,6 +37,9 @@ class PlotRdf:
                  label=self.name,
                  color = self.color
                  )
+        plt.hlines(self.df['v_Tension'].mean(),
+                   self.df['TimeStep'][0], self.df['TimeStep'].iloc[-1],
+                   label=f'$\gamma$ = {self.df["v_Tension"].mean():.3f}')
         self.axis()
         plt.legend()
 
