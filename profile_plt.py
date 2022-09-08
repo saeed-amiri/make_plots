@@ -1,9 +1,13 @@
-from cProfile import label
 import sys
 import typing
 import pandas as pd
+import numpy as np
 import matplotlib
 import matplotlib.pylab as plt
+from scipy.interpolate import interp1d
+from scipy import stats,interpolate
+from scipy.signal import savgol_filter
+from scipy.optimize import curve_fit
 
 
 class Doc:
@@ -40,6 +44,7 @@ class Profile:
                 _df = self.get_blocks(block)
             else:
                 _df += self.get_blocks(block)
+        self.get_info(_df/num)
         return _df/num
 
     def get_header(self, all_lines: list[str]) -> tuple[int, int, int]:
@@ -62,6 +67,8 @@ class Profile:
                         'coord1': float,
                         'density_mass': float,
                         'count': float})
+        df['coord1'] -= df['coord1'].min()
+
         return df
 
     def process_header(self, line: str) -> tuple[int, int, int]:
@@ -73,7 +80,25 @@ class Profile:
         time_step, num_rows, nbins = ll
         del _ll, ll
         return time_step, num_rows, nbins
+    
+    def get_info(self, df):
+        """print put the infos about densities"""
+        # print(df['density_mass'].min(), df['density_mass'].max())
+        x_values = [0, 40, 62, 110, 130, 170]
+        x_index = [self.find_nearest(df['coord1'], item) for item in x_values]
+        print(f'{self.file}:\n')
+        for i in range(len(x_index)-1):
+            x_i = x_index[i]
+            x_j = x_index[i+1]
+            print(f'\tave[{x_i}:{x_j}]:{df["density_mass"][x_i:x_j].min()}')
+        print(f'max value {self.file}: {np.max(df["density_mass"])}')
+        print(f'\n')
+        self.x_index = x_index
 
+    def find_nearest(self, array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
 
 class PlotProfile:
     """plot all the profile on one tableau"""
@@ -87,29 +112,44 @@ class PlotProfile:
         del df
 
     def plot_df(self) -> None:
-        plt.plot(self.df['coord1'],
-                 self.df['density_mass'],
+        plt.plot(self.df['coord1'][:-2],
+                 self.df['density_mass'][:-2],
                  label=self.name,
                  color = self.color
                  )
+        # print(self.df['density_mass'].max())
+        # print(f'r max: {self.df["coord1"].max()}')
         self.axis()
-        plt.legend()
+        plt.legend(fontsize= 10)
 
     def axis(self) -> None:
         """set axis lables, ranges, ..."""
-        plt.xlabel(r'$r/A$', fontsize=14)
+        # xticks = np.linspace(self.df['coord1'][0],
+                            #  self.df['coord1'].iloc[-1], num=5
+                            #  )
+        # xticks = [np.round(item) for item in xticks]
+        x_values = [0, 50, 60, 110, 125, 172.9]
+        x_index = [self.find_nearest(df['coord1'], item) for item in x_values]
+        plt.xlabel(r'$r/A$', fontsize=13)
         plt.ylabel(r'${\rho\,/\,(kgm ^{-3})}$', fontsize=14)
+        plt.xticks(x_values, fontsize=9)
+        plt.grid(True, alpha=0.5, ls=':')
+    
+    def find_nearest(self, array, value):
+        array = np.asarray(array)
+        idx = (np.abs(array - value)).argmin()
+        return idx
 
 
-STEP = 1000
-NSTEP = 2500000
+STEP = 10000
+NSTEP = 1000000
 files: typing.Any = sys.argv[1:]
-plt.figure(figsize=(16/3, 3), dpi=180)
+plt.figure(figsize=(16/3, 3), dpi=300)
 font = {'weight' : 'normal',
-        'size'   : 14}
+        'size'   : 13}
 
 matplotlib.rc('font', **font)
-colors = ['red', 'black']
+colors = ['black', 'red']
 outname: str = ''
 for i, filename in enumerate(files):
     name = filename.strip().split('.')[0]
@@ -119,7 +159,7 @@ for i, filename in enumerate(files):
     plot.plot_df()
     outname += name
 outname = f"{outname}_profile.png"
-plt.title('density profiles')
+# plt.title('density profiles')
 plt.tight_layout()
-plt.savefig(outname, transparent=True)
+plt.savefig(outname, transparent=True, dpi=300)
 plt.show()
