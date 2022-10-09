@@ -1,7 +1,11 @@
+from cProfile import label
 import pandas as pd
 import matplotlib
 import matplotlib.pylab as plt
 import sys
+# plt.style.use('science')
+# plt.style.use(['science','ieee'])
+
 
 class Doc:
     """reading the inforamtion about the wall time
@@ -29,6 +33,7 @@ class ReadTime:
         spd: list[float]  # speed up column
         spd = [item/df['ns/day'][0] for item in df['ns/day']]
         df['spd'] = spd
+        df['cores'] = [item*96 for item in df['nodes']]
         return df
     
     def set_idl(self,
@@ -56,13 +61,27 @@ class PlotDf:
         """make plot"""
         width = 426.79135
         _, ax = plt.subplots(1, figsize=self.set_sizes(width))
-        ax.plot(df['nodes'], df['spd'],
+        ax.plot(df['nodes'][:-3], df['spd'][:-3],
                 c='k',
                 markersize=5,
                 marker='^',
                 ls=':',
-                mfc='r')
-        ax.plot(df['nodes'][:9], df['idl'][:9])
+                mfc='r',
+                mec='r',
+                label='test')
+        ax.plot(df['nodes'][:9], df['idl'][:9], label='Ideal')
+        xticks = [96, 960, 1920, 2880, 3840]
+        xlocs = [1, 10, 20, 30, 40]
+        ylocs = [1, 5, 10]
+        yticks = [1, 5, 10]
+        ax.set_ylim(0,12.5)
+        ax.set_xticks(xlocs)
+        ax.set_xticklabels(xticks)
+        ax.set_yticks(ylocs)
+        ax.set_yticklabels(yticks)
+        ax.set_xlabel('Number of processes')
+        ax.set_ylabel('Speedup')
+        plt.legend()
         plt.savefig('spd.jpeg',
                     dpi=300,
                     transparent=True,
@@ -77,7 +96,7 @@ class PlotDf:
         inches_per_pt = 1/72.27
         golden_ratio = (5**0.5 - 1)/2
         fig_width_in = fig_width_pt * inches_per_pt
-        fig_height_in = fig_width_in * golden_ratio
+        fig_height_in = fig_width_in * golden_ratio*1
         fig_dim = (fig_width_in, fig_height_in)
         return fig_dim
 
