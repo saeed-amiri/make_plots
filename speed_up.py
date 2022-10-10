@@ -1,6 +1,4 @@
-from cProfile import label
 import pandas as pd
-import matplotlib
 import matplotlib.pylab as plt
 import sys
 # plt.style.use('science')
